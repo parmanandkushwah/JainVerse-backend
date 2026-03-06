@@ -2,7 +2,7 @@
 
 const db = require('../models');
 const { generateToken } = require('../utils/generateToken');
-const { sendOTPEmail } = require('../utils/emailService');
+const { sendOTPEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emailService');
 
 /**
  * Validation helper functions
@@ -517,6 +517,126 @@ const resendOTP = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/auth/forgot-password
+ * Send password reset OTP to user's email
+ */
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required.',
+      });
+    }
+
+    // Find user by email
+    const user = await db.User.findOne({ where: { email } });
+    if (!user) {
+      // Don't reveal whether user exists
+      return res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a password reset OTP has been sent.',
+      });
+    }
+
+    // Generate 6-digit OTP for password reset
+    const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP to user record
+    user.resetPasswordToken = resetOTP;
+    user.resetPasswordExpires = resetPasswordExpires;
+    await user.save();
+
+    // Send password reset OTP email
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetOTP);
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account exists with this email, a password reset OTP has been sent.',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error.',
+    });
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using OTP
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, OTP, and new password are required.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters.',
+      });
+    }
+
+    // Find user by email
+    const user = await db.User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP.',
+      });
+    }
+
+    // Check if OTP matches
+    if (user.resetPasswordToken !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP.',
+      });
+    }
+
+    // Check if OTP has expired
+    if (!user.resetPasswordExpires || new Date() > new Date(user.resetPasswordExpires)) {
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new password reset.',
+      });
+    }
+
+    // Update password and clear reset tokens
+    user.password = newPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. You can now login with your new password.',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error.',
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -525,4 +645,6 @@ module.exports = {
   changePassword,
   verifyOTP,
   resendOTP,
+  forgotPassword,
+  resetPassword,
 };

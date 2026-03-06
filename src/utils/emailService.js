@@ -203,7 +203,68 @@ Visit us at: ${frontendUrl}
   }
 };
 
+/**
+ * Send password reset email
+ * @param {string} email - User's email address
+ * @param {string} name - User's name
+ * @param {string} otp - 6-digit OTP
+ */
+const sendPasswordResetEmail = async (email, name, otp) => {
+  try {
+    const apiInstance = getTransactionalApi();
+    
+    const senderEmail = process.env.EMAIL_FROM || 'parthmahajan27.7@gmail.com';
+    const senderName = process.env.EMAIL_FROM_NAME || 'JainVerse';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
+          <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="background-color: #4f46e5; padding: 20px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">JainVerse</h1>
+            </div>
+            <div style="padding: 30px;">
+              <h2 style="color: #333333; margin-top: 0;">Password Reset OTP</h2>
+              <p style="color: #666666; line-height: 1.6;">
+                You requested to reset your password. Use the following OTP to reset your password:
+              </p>
+              <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; color: #4f46e5; letter-spacing: 4px;">${otp}</span>
+              </div>
+              <p style="color: #666666; line-height: 1.6;">
+                This OTP will expire in <strong>10 minutes</strong>.
+              </p>
+              <p style="color: #999999; font-size: 12px; margin-top: 20px;">
+                If you didn't request a password reset, please ignore this email.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const result = await apiInstance.sendTransacEmail({
+      sender: { email: senderEmail, name: senderName },
+      to: [{ email, name: name || 'User' }],
+      subject: 'Password Reset OTP - JainVerse',
+      htmlContent,
+    });
+
+    console.log('Brevo password reset email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending password reset email via Brevo:', error);
+    return null;
+  }
+};
+
 module.exports = {
   sendOTPEmail,
   sendWelcomeEmail,
+  sendPasswordResetEmail,
 };

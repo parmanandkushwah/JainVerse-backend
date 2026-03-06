@@ -72,6 +72,12 @@ router.post('/verify-otp', authController.verifyOTP);
 // POST /api/auth/resend-otp - Resend OTP to user's email
 router.post('/resend-otp', authController.resendOTP);
 
+// POST /api/auth/forgot-password - Send password reset OTP
+router.post('/forgot-password', authController.forgotPassword);
+
+// POST /api/auth/reset-password - Reset password using OTP
+router.post('/reset-password', authController.resetPassword);
+
 /**
  * Protected routes (authentication required)
  */
