@@ -31,6 +31,14 @@ const register = async (req, res) => {
     const body = req.body || {};
     const { name, email, password, phone, role, country, state, city, latitude, longitude } = body;
     const profileImage = req.file ? req.file.filename : null;
+    
+    // Get backend URL for building full image URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    const profileImageUrl = req.file ? `${backendUrl}/uploads/profile-images/${req.file.filename}` : null;
+    
+    // Convert empty strings to null for numeric fields
+    const lat = latitude === '' || latitude === undefined ? null : parseFloat(latitude);
+    const lng = longitude === '' || longitude === undefined ? null : parseFloat(longitude);
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -84,9 +92,9 @@ const register = async (req, res) => {
       country,
       state,
       city,
-      latitude,
-      longitude,
-      profileImage,
+      latitude: lat,
+      longitude: lng,
+      profileImage: profileImageUrl,
     });
 
     // Generate token
@@ -164,11 +172,20 @@ const login = async (req, res) => {
     // Generate token
     const token = generateToken(user);
 
+    // Get backend URL for building full image URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    
+    // Convert profileImage path to full URL if exists
+    const userData = user.toJSON();
+    if (userData.profileImage && !userData.profileImage.startsWith('http')) {
+      userData.profileImage = `${backendUrl}/uploads/profile-images/${userData.profileImage}`;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Login successful.',
       data: {
-        user: user.toJSON(),
+        user: userData,
         token,
       },
     });
