@@ -66,6 +66,12 @@ router.post('/register', (req, res, next) => {
 // POST /api/auth/login - Login user
 router.post('/login', authController.login);
 
+// POST /api/auth/verify-otp - Verify OTP and complete email verification
+router.post('/verify-otp', authController.verifyOTP);
+
+// POST /api/auth/resend-otp - Resend OTP to user's email
+router.post('/resend-otp', authController.resendOTP);
+
 /**
  * Protected routes (authentication required)
  */

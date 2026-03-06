@@ -104,6 +104,15 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    // OTP verification fields
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    otpExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   }, {
     timestamps: true,
     underscored: true,
@@ -143,6 +152,8 @@ module.exports = (sequelize) => {
     delete values.resetPasswordToken;
     delete values.resetPasswordExpires;
     delete values.verificationToken;
+    delete values.otp;
+    delete values.otpExpires;
     return values;
   };
 
