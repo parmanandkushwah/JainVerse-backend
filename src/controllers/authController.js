@@ -27,7 +27,10 @@ const validateRole = (role) => {
  */
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, role, country, state, city, latitude, longitude } = req.body;
+    // Handle case when body is not parsed
+    const body = req.body || {};
+    const { name, email, password, phone, role, country, state, city, latitude, longitude } = body;
+    const profileImage = req.file ? req.file.filename : null;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -83,6 +86,7 @@ const register = async (req, res) => {
       city,
       latitude,
       longitude,
+      profileImage,
     });
 
     // Generate token
