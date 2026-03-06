@@ -187,9 +187,25 @@ const login = async (req, res) => {
 
     // Check if email is verified
     if (!user.isEmailVerified) {
+      // Generate new OTP for unverified user
+      const newOTP = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
+      // Save OTP to user record
+      user.otp = newOTP;
+      user.otpExpires = otpExpires;
+      await user.save();
+      
+      // Send OTP email
+      try {
+        await sendOTPEmail(user.email, user.name, newOTP);
+      } catch (emailError) {
+        console.error('Error sending OTP email:', emailError);
+      }
+      
       return res.status(401).json({
         success: false,
-        message: 'Please verify your email address before logging in.',
+        message: 'Please verify your email address before logging in. A new OTP has been sent to your email.',
         requiresVerification: true,
         email: user.email,
       });

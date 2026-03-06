@@ -4,6 +4,7 @@ const sequelize = require("./config/db");
 const db = require("./models");
 const fs = require('fs');
 const path = require('path');
+const morgan = require('morgan');
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'profile-images');
@@ -14,6 +15,7 @@ if (!fs.existsSync(uploadsDir)) {
 const app = express();
 
 // Middleware
+app.use(morgan('dev')); // Logging middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
